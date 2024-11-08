@@ -2,6 +2,7 @@
 
 namespace App\Providers;
 
+
 use App\Repositories\ProductRepository;
 use App\DataTransferObject\ProductDTO;
 
