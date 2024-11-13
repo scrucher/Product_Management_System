@@ -14,7 +14,7 @@ class ProductVariations extends Model
      * @var array
      *
      */
-    protected $fillable = ['product_id', 'color', 'size', 'quantity', 'availability'];
+    protected $fillable = ['product_id', 'color', 'size', 'quantity', 'availability', 'attributes'];
 
     /**
      *
@@ -36,10 +36,10 @@ class ProductVariations extends Model
       * @var boolean
       */
 
-      protected $incrementing = true;
+      public $incrementing = true;
 
-    public function product()
-    {
-        return $this->belongsTo(Product::class);
-    }
+      public function product()
+      {
+          return $this->belongsTo(Product::class);
+      }
 }

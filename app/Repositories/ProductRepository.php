@@ -3,13 +3,23 @@
 namespace App\Repositories;
 
 use App\Models\Product;
-use App\Models\ProductVariations;
 use App\DataTransferObject\ProductDTO;
+use App\Repositories\ProductVariationsRepository;
 
 class ProductRepository
 {
+    protected $productVariationsRepository;
+
+    public function __construct(ProductVariationsRepository $productVariationsRepository)
+    {
+        $this->productVariationsRepository = $productVariationsRepository;
+    }
+
     public function save(ProductDTO $productDTO)
     {
+        if ($productDTO->status == 'deleted') {
+            return;
+        }
 
         $product = new Product();
         $product->name = $productDTO->name;
@@ -17,32 +27,30 @@ class ProductRepository
         $product->sku = $productDTO->sku;
         $product->status = $productDTO->status;
         $product->currency = $productDTO->currency;
-        $product->variations = $productDTO->variations;
-        if($product->save()){
-            if($productDTO->variations){
-                foreach($productDTO->variations as $variation){
-                    $productVariation = new ProductVariations();
-                    $productVariation->product_id = $product->id;
-                    $productVariation->size = $variation['size'];
-                    $productVariation->color = $variation['color'];
-                    $productVariation->price = $variation['price'];
-                    $productVariation->quantity = $variation['quantity'];
-                    $productVariation->save();
-                    }
+        $product->quantity = $productDTO->quantity;
+        $product->save();
+
+        if ($productDTO->variations) {
+            foreach ($productDTO->variations as $variation) {
+                try {
+                    $this->productVariationsRepository->save($variation, $product->id);
+                } catch (\Exception $e) {
+                    return $e->getMessage();
                 }
             }
+        }
 
-        $result = Product::find($product->id)->product_variations->where('id', $product->id)->first();
+        return Product::with('product_variations')->find($product->id);
     }
 
     public function getAll()
     {
-        return Product::all();
+        return Product::with('product_variations')->get();
     }
 
     public function findById($id)
     {
-        return Product::find($id);
+        return Product::with('product_variations')->find($id);
     }
 
     public function delete($id)

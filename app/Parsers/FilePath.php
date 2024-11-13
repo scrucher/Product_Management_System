@@ -9,6 +9,6 @@ interface Path{
 class FilePath implements Path{
     public function getPath(string $filename): string
     {
-        return base_path('public/uploads/'.$filename);
+        return base_path('/public/uploads/'.$filename);
     }
 }

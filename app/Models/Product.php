@@ -4,7 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasOne;
-use App\Models\ProductVariation;
+use App\Models\ProductVariations;
 
 class Product extends Model
 {
@@ -18,7 +18,18 @@ class Product extends Model
         'sku',
         'status',
         'price',
+        'quantity',
         'currency',
+    ];
+
+    protected $casts = [
+        'id' => 'integer',
+        'name' => 'string',
+        'sku' => 'string',
+        'status' => 'string',
+        'currency' => 'string',
+        'quantity' => 'integer',
+        'price' => 'decimal:2',
     ];
 
     /**
@@ -53,9 +64,9 @@ class Product extends Model
      * Get the product variations for the product.
      */
 
-    public function variations()
+    public function product_variations()
     {
-        return $this->hasMany(ProductVariation::class);
+        return $this->hasMany(ProductVariations::class);
     }
 
     /**
