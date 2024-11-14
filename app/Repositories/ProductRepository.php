@@ -1,5 +1,4 @@
 <?php
-
 namespace App\Repositories;
 
 use App\Models\Product;
@@ -17,30 +16,33 @@ class ProductRepository
 
     public function save(ProductDTO $productDTO)
     {
-        if ($productDTO->status == 'deleted') {
-            return;
-        }
-
-        $product = new Product();
-        $product->name = $productDTO->name;
-        $product->price = $productDTO->price;
-        $product->sku = $productDTO->sku;
-        $product->status = $productDTO->status;
-        $product->currency = $productDTO->currency;
-        $product->quantity = $productDTO->quantity;
+        $product = new Product($productDTO->fromArray());
         $product->save();
 
-        if ($productDTO->variations) {
-            foreach ($productDTO->variations as $variation) {
-                try {
-                    $this->productVariationsRepository->save($variation, $product->id);
-                } catch (\Exception $e) {
-                    return $e->getMessage();
-                }
-            }
-        }
-
+        $this->saveVariations($productDTO->variations, $product->id);
         return Product::with('product_variations')->find($product->id);
+    }
+
+    public function update($id, ProductDTO $productDTO)
+    {
+        $product = Product::findOrFail($id);
+        $product->update($productDTO->toArray());
+
+        // Clear existing variations before saving new ones
+        $product->product_variations()->delete();
+        $this->saveVariations($productDTO->variations, $id);
+    }
+
+    public function saveVariations(array $variations, $productId)
+    {
+        foreach ($variations as $variation) {
+            $this->productVariationsRepository->save($variation, $productId);
+        }
+    }
+
+    public function findBySku($sku)
+    {
+        return Product::where('sku', $sku)->first();
     }
 
     public function getAll()
@@ -53,8 +55,9 @@ class ProductRepository
         return Product::with('product_variations')->find($id);
     }
 
-    public function delete($id)
+    public function softDeleteProductsNotInList(array $productIdsInFile)
     {
-        return Product::destroy($id);
+        Product::whereNotIn('id', $productIdsInFile)
+            ->update(['status' => 'deleted', 'deleted_at' => now()]);
     }
 }

@@ -8,7 +8,11 @@ interface Path{
 
 class FilePath implements Path{
     public function getPath(string $filename): string
-    {
-        return base_path('/public/uploads/'.$filename);
+{
+    if (empty($filename)) {
+        throw new \InvalidArgumentException('Filename cannot be empty.');
     }
+
+    return base_path('/public/uploads/' . $filename);
+}
 }

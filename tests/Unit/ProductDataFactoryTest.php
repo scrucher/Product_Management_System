@@ -1,6 +1,6 @@
 <?php
 
-namespace Tests\Unit\Factories;
+namespace Tests\Unit;
 
 use PHPUnit\Framework\TestCase;
 use App\Factories\ProductDataFactory;

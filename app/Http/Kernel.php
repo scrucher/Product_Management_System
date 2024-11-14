@@ -49,8 +49,6 @@ class Kernel extends HttpKernel
     /**
      * The application's route middleware.
      *
-     * These middleware may be assigned to groups or used individually.
-     *
      * @var array
      */
     protected $routeMiddleware = [
@@ -64,8 +62,4 @@ class Kernel extends HttpKernel
         'throttle' => \Illuminate\Routing\Middleware\ThrottleRequests::class,
         'verified' => \Illuminate\Auth\Middleware\EnsureEmailIsVerified::class,
     ];
-    protected function schedule(Schedule $schedule){
-        $schedule->command('sync:product-data')->dailyAt('00:00')->withoutOverlapping();
-    }
-
 }
