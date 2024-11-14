@@ -1,7 +1,5 @@
 <?php
-
 namespace App\Services;
-
 
 use App\Repositories\ProductRepository;
 use App\DataTransferObject\ProductDTO;
@@ -15,12 +13,23 @@ class ProductService
         $this->productRepository = $productRepository;
     }
 
-    public function createProduct(ProductDTO $productDTO)
+    public function saveOrUpdateProduct(ProductDTO $productDTO)
     {
-        return $this->productRepository->save($productDTO);
+        $existingProduct = $this->productRepository->findBySku($productDTO->sku);
+
+        if ($existingProduct) {
+            $this->productRepository->update($existingProduct->id, $productDTO);
+        } else {
+            $this->productRepository->save($productDTO);
+        }
     }
 
-    public function getProducts () : array
+    public function softDeleteOutdatedProducts(array $productIdsInFile)
+    {
+        $this->productRepository->softDeleteProductsNotInList($productIdsInFile);
+    }
+
+    public function getProducts(): array
     {
         return $this->productRepository->getAll();
     }
@@ -28,10 +37,5 @@ class ProductService
     public function getProduct($id)
     {
         return $this->productRepository->findById($id);
-    }
-
-    public function deleteProduct($id)
-    {
-        return $this->productRepository->delete($id);
     }
 }

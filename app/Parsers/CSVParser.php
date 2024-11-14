@@ -2,6 +2,9 @@
 
 namespace App\Parsers;
 
+use Exception;
+
+
 interface FileParser
 {
     public function parse(string $filePath): array;
@@ -11,6 +14,9 @@ class CSVParser implements FileParser
 {
     public function parse(string $filePath): array
     {
+        if (!file_exists($filePath)) {
+            throw new Exception("File not found: {$filePath}");
+        }
         $contents = file_get_contents($filePath);
         $lines = explode("\n", $contents);
         $parsedData = [];

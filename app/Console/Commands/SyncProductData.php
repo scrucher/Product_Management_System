@@ -4,52 +4,62 @@ namespace App\Console\Commands;
 
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\Http;
-use App\Models\Product;
 use Illuminate\Support\Facades\Log;
+use App\Models\Product;
 
 class SyncProductData extends Command
 {
-    // Command signature
     protected $signature = 'sync:product-data';
-    protected $description = 'Synchronize product data from a third-party API daily';
-
-    public function __construct()
-    {
-        parent::__construct();
-    }
+    protected $description = 'Synchronize product data from an external API';
 
     public function handle()
     {
         try {
-            // Make a request to the third-party API
-            $response = Http::get('https://third-party-api.com/products');
+            $response = Http::get('https://5fc7a13cf3c77600165d89a8.mockapi.io/api/v5/products');
 
             if ($response->successful()) {
                 $products = $response->json();
 
+                // Track existing products
+                $existingProductIds = Product::pluck('id')->toArray();
+                $receivedProductIds = [];
+
                 foreach ($products as $productData) {
-                    // Update or create product
-                    Product::updateOrCreate(
-                        ['sku' => $productData['sku']], // Match existing product by SKU
-                        [
-                            'name' => $productData['name'],
-                            'price' => $productData['price'],
-                            'status' => $productData['status'],
-                            'currency' => $productData['currency'],
-                            // Add other fields as necessary
-                        ]
+                    $receivedProductIds[] = $productData['id'];
+
+                    // Update or create product with variations
+                    $product = Product::updateOrCreate(
+                        ['id' => $productData['id']],
+                        ['name' => $productData['name'], 'price' => $productData['price'], 'status' => 'active']
                     );
+
+                    // Update variations (assuming your database has a ProductVariation model/table)
+                    foreach ($productData['variations'] as $variation) {
+                        $product->variations()->updateOrCreate(
+                            ['id' => $variation['id']],
+                            [
+                                'color' => $variation['color'],
+                                'size' => $variation['size'],
+                                'quantity' => $variation['quantity'],
+                                'availability' => $variation['availability']
+                            ]
+                        );
+                    }
                 }
 
-                $this->info('Product data synchronized successfully.');
+                // Soft delete outdated products
+                $productsToDelete = array_diff($existingProductIds, $receivedProductIds);
+                Product::whereIn('id', $productsToDelete)->update(['status' => 'deleted']);
+
                 Log::info('Product data synchronized successfully.');
+                return 0; // Success
             } else {
-                $this->error('Failed to fetch product data.');
                 Log::error('Failed to fetch product data: ' . $response->status());
+                return 1; // Failure
             }
         } catch (\Exception $e) {
-            $this->error('An error occurred: ' . $e->getMessage());
             Log::error('Error during product data sync: ' . $e->getMessage());
+            return 1; // Failure on exception
         }
     }
 }
