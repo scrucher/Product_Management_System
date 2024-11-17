@@ -16,7 +16,7 @@ class ProductRepository
 
     public function save(ProductDTO $productDTO)
     {
-        $product = new Product($productDTO->fromArray());
+        $product = new Product($productDTO->toArray());
         $product->save();
 
         $this->saveVariations($productDTO->variations, $product->id);
@@ -55,9 +55,52 @@ class ProductRepository
         return Product::with('product_variations')->find($id);
     }
 
-    public function softDeleteProductsNotInList(array $productIdsInFile)
+    public function softDeleteProductsNotInList( $productIdsInFile)
     {
         Product::whereNotIn('id', $productIdsInFile)
             ->update(['status' => 'deleted', 'deleted_at' => now()]);
+    }
+
+    public function saveOrUpdateProductsBatch($productDTOs): void
+    {
+        $dataToInsert = [];
+        $updateQueries = [];
+
+        foreach ($productDTOs as $productDTO) {
+            $data = [
+                'id' => $productDTO->id ?? null,
+                'name' => $productDTO->name,
+                'price' => $productDTO->price,
+                'sku' => $productDTO->sku,
+                'status' => $productDTO->status,
+                'currency' => $productDTO->currency,
+                'quantity' => $productDTO->quantity,
+                'created_at' => now(),
+                'updated_at' => now(),
+            ];
+
+            $dataToInsert[] = $data;
+
+            // Build an update query for each row
+            $updateQueries[] = "
+                INSERT INTO products (id, name, price, sku, status, currency, quantity, created_at, updated_at)
+                VALUES (:id, :name, :price, :sku, :status, :currency, :quantity, :created_at, :updated_at)
+                ON DUPLICATE KEY UPDATE
+                name = VALUES(name),
+                price = VALUES(price),
+                sku = VALUES(sku),
+                status = VALUES(status),
+                currency = VALUES(currency),
+                quantity = VALUES(quantity),
+                updated_at = VALUES(updated_at)
+            ";
+        }
+
+        // Execute the batch insert and update using raw query
+        DB::transaction(function () use ($updateQueries, $dataToInsert) {
+            foreach ($updateQueries as $index => $query) {
+                DB::statement($query, $dataToInsert[$index]);
+            }
+        });
     }
 }

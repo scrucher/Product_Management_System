@@ -38,4 +38,8 @@ class ProductService
     {
         return $this->productRepository->findById($id);
     }
+    public function saveOrUpdateBatch($productDTOs): void
+    {
+        $this->productRepository->saveOrUpdateProductsBatch($productDTOs);
+    }
 }
