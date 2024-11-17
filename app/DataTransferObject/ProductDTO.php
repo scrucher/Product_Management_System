@@ -25,4 +25,17 @@ class ProductDTO
 
         return $dto;
     }
+
+    public function toArray(): array
+    {
+        return [
+            'name' => $this->name,
+            'price' => $this->price,
+            'sku' => $this->sku,
+            'status' => $this->status,
+            'currency' => $this->currency,
+            'variations' => $this->variations,
+            'quantity' => $this->quantity,
+        ];
+    }
 }

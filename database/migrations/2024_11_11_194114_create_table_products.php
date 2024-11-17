@@ -17,7 +17,7 @@ return new class extends Migration
             $table->string('sku');
             $table->string('status');
             $table->integer('quantity')->default(0);
-            $table->decimal('price', 8, 2);
+            $table->decimal('price', 16, 2);
             $table->string('currency', 3);
             $table->timestamps(); // created_at, updated_at
         });
